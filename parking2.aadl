@@ -1,0 +1,184 @@
+package parking2
+public
+	with Deployment;
+
+	--------------
+	--- SYSTEM ---
+	--------------
+	system parking
+	end parking;
+
+	system implementation parking.impl
+		subcomponents
+			plate: device plate;
+			photocell1: device photocell;
+			photocell2: device photocell;
+			camera: device camera;
+			barrier: device barrier;
+			terminal: device terminal;
+			main: process p_main.impl;
+			
+			bus_mem: bus bus_mem;
+			ram: memory RAM;
+			cpu: processor the_processor;
+		connections
+			bus_plate: BUS ACCESS bus_mem -> plate.bus_mem;
+			bus_photocell1: BUS ACCESS bus_mem -> photocell1.bus_mem;
+			bus_photocell2: BUS ACCESS bus_mem -> photocell2.bus_mem;
+			bus_camera: BUS ACCESS bus_mem -> camera.bus_mem;
+			bus_barrier: BUS ACCESS bus_mem -> barrier.bus_mem;
+			bus_terminal: BUS ACCESS bus_mem -> terminal.bus_mem;
+			bus_cpu: BUS ACCESS bus_mem -> cpu.bus_mem;
+			bus_ram: BUS ACCESS bus_mem -> ram.bus_mem;
+			
+			car_enter: port plate.car_enter -> camera.car_enter;
+			car_leave: port plate.car_leave -> camera.car_leave;
+			vacated1: port photocell1.vacated -> main.vacated1;
+			vacated2: port photocell2.vacated -> main.vacated2;
+			enter: port camera.enter -> main.enter;
+			leafe: port camera.leave -> main.leave;
+			open_enter: port main.open_enter -> barrier.open_enter;
+			open_leave: port terminal.open_leave -> barrier.open_leave;
+			message: port main.message -> terminal.message;
+	end parking.impl;
+
+
+	---------------
+	--- DEVICES ---
+	---------------
+	device plate
+		features
+			car_enter: OUT EVENT PORT;
+			car_leave: OUT EVENT PORT;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+			
+	end plate;
+
+	device photocell
+		features
+			vacated: OUT EVENT PORT;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+	end photocell;
+
+	device camera
+		features
+			enter: out data port;
+			leave: out data port;
+			car_enter: IN EVENT PORT;
+			car_leave: IN EVENT PORT;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+	end camera;
+
+	device barrier
+		features
+			open_enter: in event port;
+			open_leave: in event port;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+	end barrier;
+
+	device terminal
+		features
+			open_leave: out event port;
+			message: in data port;
+			
+			
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+	end terminal;
+	
+	
+	---------------
+	-- PROCESSES --
+	---------------
+	
+	process p_main
+		features
+			vacated1: in event port;
+			vacated2: in event port;
+			enter: in data port;
+			leave: in data port;
+			open_enter: out event port;
+			message: out data port;
+	end p_main;
+	
+	process implementation p_main.impl
+		SUBCOMPONENTS
+			enter_analyze: thread enter_analyze.impl;
+			leave_analyze: thread leave_analyze.impl;
+			counter: thread counter.impl;
+			
+		connections
+			conn_enter: port enter -> enter_analyze.enter;
+			conn_open: port enter_analyze.open_enter -> open_enter;
+			conn_leave: port leave -> leave_analyze.leave;
+			conn_message: port leave_analyze.message -> message;
+			conn_coutnter_number: port counter.counter_number -> enter_analyze.counter_number;
+			conn_vacated1: port vacated1 -> counter.vacated1;
+			conn_vacated2: port vacated2 -> counter.vacated2;
+			conn_update_coutner: port enter_analyze.update_counter -> counter.update_counter; 
+	end p_main.impl;
+	
+	-------------
+	-- THREADS --
+	-------------
+	
+	thread enter_analyze
+		features
+			enter: in data port;
+			open_enter: out event port;
+			counter_number: in data port;
+			update_counter: out event port;
+	end enter_analyze;
+	
+	thread implementation enter_analyze.impl
+		
+	end enter_analyze.impl;
+	
+	thread leave_analyze
+		features
+			message: out data port;
+			leave: in data port;
+	end leave_analyze;
+	
+	thread implementation leave_analyze.impl
+		
+	end leave_analyze.impl;
+	
+	thread counter
+		features
+			counter_number: out data port;
+			vacated1: in event port;
+			vacated2: in event port;
+			update_counter: in event port;
+	end counter;
+	
+	thread implementation counter.impl
+		
+	end counter.impl;
+	
+	
+	
+	-------------------------
+	-- PROCESSOR, RAM, BUS --
+	-------------------------
+	processor the_processor
+		features
+				bus_mem: REQUIRES BUS ACCESS bus_mem;
+		properties
+			Deployment::Execution_Platform => Native;
+            Scheduling_Protocol => (Posix_1003_Highest_Priority_First_Protocol); 
+			Priority_Range => 1 .. 255; 
+	end the_processor;
+
+	processor implementation the_processor.i
+	end the_processor.i;
+	
+	BUS bus_mem
+	end bus_mem;
+
+	MEMORY RAM
+		FEATURES
+			bus_mem: REQUIRES BUS ACCESS bus_mem;
+	END RAM;
+
+	
+end parking2;
