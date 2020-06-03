@@ -1,4 +1,4 @@
-package parking2
+package parking
 public
 	with Deployment;
 
@@ -40,6 +40,9 @@ public
 			open_enter: port main.open_enter -> barrier.open_enter;
 			open_leave: port terminal.open_leave -> barrier.open_leave;
 			message: port main.message -> terminal.message;
+		PROPERTIES
+			Actual_Memory_Binding => (reference (ram)) applies to main;
+			Actual_Processor_Binding => (reference (cpu)) applies to main;
 	end parking.impl;
 
 
@@ -130,7 +133,12 @@ public
 	end enter_analyze;
 	
 	thread implementation enter_analyze.impl
-		
+		PROPERTIES
+			Priority => 71;
+			Dispatch_Protocol => Periodic;
+			Compute_Execution_Time => 10ms .. 20ms;
+			Deadline => 50ms;
+			Period => 50ms;
 	end enter_analyze.impl;
 	
 	thread leave_analyze
@@ -140,7 +148,12 @@ public
 	end leave_analyze;
 	
 	thread implementation leave_analyze.impl
-		
+		PROPERTIES
+			Priority => 70;
+			Dispatch_Protocol => Periodic;
+			Compute_Execution_Time => 10ms .. 20ms;
+			Deadline => 50ms;
+			Period => 50ms;
 	end leave_analyze.impl;
 	
 	thread counter
@@ -152,7 +165,12 @@ public
 	end counter;
 	
 	thread implementation counter.impl
-		
+		PROPERTIES
+			Priority => 72;
+			Dispatch_Protocol => Periodic;
+			Compute_Execution_Time => 2ms .. 10ms;
+			Deadline => 50ms;
+			Period => 50ms;
 	end counter.impl;
 	
 	
