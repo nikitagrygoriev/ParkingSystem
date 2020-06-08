@@ -1,6 +1,6 @@
 package parking2
 public
-	with Deployment;
+	with Deployment, data_model;
 
 	--------------
 	--- SYSTEM ---
@@ -13,6 +13,7 @@ public
 			plate: device plate;
 			photocell1: device photocell;
 			photocell2: device photocell;
+			photocell3: device photocell;
 			camera: device camera;
 			barrier: device barrier;
 			terminal: device terminal;
@@ -25,24 +26,42 @@ public
 			bus_plate: BUS ACCESS bus_mem -> plate.bus_mem;
 			bus_photocell1: BUS ACCESS bus_mem -> photocell1.bus_mem;
 			bus_photocell2: BUS ACCESS bus_mem -> photocell2.bus_mem;
+			bus_photocell3: BUS ACCESS bus_mem -> photocell3.bus_mem;
 			bus_camera: BUS ACCESS bus_mem -> camera.bus_mem;
 			bus_barrier: BUS ACCESS bus_mem -> barrier.bus_mem;
 			bus_terminal: BUS ACCESS bus_mem -> terminal.bus_mem;
 			bus_cpu: BUS ACCESS bus_mem -> cpu.bus_mem;
 			bus_ram: BUS ACCESS bus_mem -> ram.bus_mem;
 			
-			car_enter: port plate.car_enter -> camera.car_enter;
-			car_leave: port plate.car_leave -> camera.car_leave;
+			car_enter: port plate.enter_plate -> main.enter_plate;
+			car_leave: port plate.leave_plate -> main.leave_plate;
 			vacated1: port photocell1.vacated -> main.vacated1;
 			vacated2: port photocell2.vacated -> main.vacated2;
-			enter: port camera.enter -> main.enter;
-			leafe: port camera.leave -> main.leave;
+			vacated3: port photocell3.vacated -> main.vacated3;
+		
+			conn_enter: port camera.enter_camera -> main.enter_camera;
+			leave: port camera.leave_camera -> main.leave_camera;
+			
 			open_enter: port main.open_enter -> barrier.open_enter;
-			open_leave: port terminal.open_leave -> barrier.open_leave;
-			message: port main.message -> terminal.message;
+			open_leave: port main.open_leave -> barrier.open_leave;
+			
+			conn_terminal: port terminal.payment -> main.payment;
 		PROPERTIES
 			Actual_Memory_Binding => (reference (ram)) applies to main;
 			Actual_Processor_Binding => (reference (cpu)) applies to main;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to conn_enter;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to car_enter;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to open_enter;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to leave;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to car_leave;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to conn_terminal;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to open_leave;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated1;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated2;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated3;
+			
+			
+			
 	end parking.impl;
 
 
@@ -51,9 +70,13 @@ public
 	---------------
 	device plate
 		features
-			car_enter: OUT EVENT PORT;
-			car_leave: OUT EVENT PORT;
+			enter_plate: out event port;
+			leave_plate: out event port;
 			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
 			
 	end plate;
 
@@ -61,15 +84,21 @@ public
 		features
 			vacated: OUT EVENT PORT;
 			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
 	end photocell;
 
 	device camera
 		features
-			enter: out data port;
-			leave: out data port;
-			car_enter: IN EVENT PORT;
-			car_leave: IN EVENT PORT;
+			enter_camera: out data port License_Plate; 
+			leave_camera: out data port License_Plate;
 			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
 	end camera;
 
 	device barrier
@@ -77,15 +106,20 @@ public
 			open_enter: in event port;
 			open_leave: in event port;
 			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
 	end barrier;
 
 	device terminal
 		features
-			open_leave: out event port;
-			message: in data port;
-			
-			
+			payment: out event port;
 			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
 	end terminal;
 	
 	
@@ -97,10 +131,14 @@ public
 		features
 			vacated1: in event port;
 			vacated2: in event port;
-			enter: in data port;
-			leave: in data port;
+			vacated3: in event port;
+			enter_plate: in event port;
+			leave_plate: in event port;
+			enter_camera: in data port License_Plate;
+			leave_camera: in data port License_Plate;
 			open_enter: out event port;
-			message: out data port;
+			open_leave: out event port;
+			payment: in event port;
 	end p_main;
 	
 	process implementation p_main.impl
@@ -110,14 +148,20 @@ public
 			counter: thread counter.impl;
 			
 		connections
-			conn_enter: port enter -> enter_analyze.enter;
-			conn_open: port enter_analyze.open_enter -> open_enter;
-			conn_leave: port leave -> leave_analyze.leave;
-			conn_message: port leave_analyze.message -> message;
+			conn_enter_plate: port enter_plate -> enter_analyze.enter_plate;
+			conn_enter_camera: port enter_camera -> enter_analyze.enter_camera;
+			conn_open_enter: port enter_analyze.open_enter -> open_enter;
+			
+			conn_leave_plate: port leave_plate -> leave_analyze.leave_plate;
+			conn_leave_camera: port leave_camera -> leave_analyze.leave_camera;
+			conn_payment: port payment -> leave_analyze.payment;
+			conn_open_leave: port leave_analyze.open_leave -> open_leave;
+			
 			conn_coutnter_number: port counter.counter_number -> enter_analyze.counter_number;
 			conn_vacated1: port vacated1 -> counter.vacated1;
 			conn_vacated2: port vacated2 -> counter.vacated2;
-			conn_update_coutner: port enter_analyze.update_counter -> counter.update_counter; 
+			conn_vacated3: port vacated3 -> counter.vacated3;
+			conn_update_coutner: port enter_analyze.increment_counter -> counter.increment_counter; 
 	end p_main.impl;
 	
 	-------------
@@ -126,10 +170,11 @@ public
 	
 	thread enter_analyze
 		features
-			enter: in data port;
+			enter_camera: in data port License_Plate;
+			enter_plate: in event port;
 			open_enter: out event port;
-			counter_number: in data port;
-			update_counter: out event port;
+			counter_number: in data port Car_Counter;
+			increment_counter: out event port;
 	end enter_analyze;
 	
 	thread implementation enter_analyze.impl
@@ -143,8 +188,10 @@ public
 	
 	thread leave_analyze
 		features
-			message: out data port;
-			leave: in data port;
+			leave_camera: in data port License_Plate;
+			leave_plate: in event port;
+			payment: in event port;
+			open_leave: out event port;
 	end leave_analyze;
 	
 	thread implementation leave_analyze.impl
@@ -158,10 +205,11 @@ public
 	
 	thread counter
 		features
-			counter_number: out data port;
+			counter_number: out data port Car_Counter;
 			vacated1: in event port;
 			vacated2: in event port;
-			update_counter: in event port;
+			vacated3: in event port;
+			increment_counter: in event port;
 	end counter;
 	
 	thread implementation counter.impl
@@ -197,6 +245,20 @@ public
 		FEATURES
 			bus_mem: REQUIRES BUS ACCESS bus_mem;
 	END RAM;
+	
+	
+	----------
+	-- DATA --
+	----------
+	DATA License_Plate
+		PROPERTIES
+			Data_Model::Data_Representation => integer;
+	END License_Plate;
+	
+	DATA Car_Counter
+		PROPERTIES
+			Data_Model::Data_Representation => integer;
+	END Car_Counter;
 
 	
 end parking2;
