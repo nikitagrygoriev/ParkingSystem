@@ -1,290 +1,291 @@
 package parking
 public
-	with radar_types;
-	with deployment;
+	with Deployment, data_model;
 
-	SYSTEM park
-	END park;
+	--------------
+	--- SYSTEM ---
+	--------------
+	system parking
+	end parking;
 
-
-	SYSTEM IMPLEMENTATION park.simple
-	SUBCOMPONENTS
-		szlaban: DEVICE motor;
-		alert: DEVICE screen;
-		terminal: PROCESS processing.others;
-		cpu: PROCESSOR leon2;
-		VME: BUS VME;
-		RAM: MEMORY RAM;
-		kamera: device antenna;
-		fotokomorka: device antenna;
-		petla_ind: device antenna;
-		zegar: device antenna;
-	connections
-		A6: BUS ACCESS VME -> szlaban.VME;
-		A7: BUS ACCESS VME -> alert.VME;
-		A8: BUS ACCESS VME -> cpu.VME;
-		A9: BUS ACCESS VME -> RAM.VME;
-		park_simple_new_connection: bus access VME -> kamera.antenna_new_feature3;
-		park_simple_new_connection2: bus access VME -> fotokomorka.antenna_new_feature2;
-		park_simple_new_connection3: bus access VME -> petla_ind.antenna_new_feature;
-		park_simple_new_connection4: bus access VME -> zegar.antenna_new_feature4;
-		park_simple_new_connection5: feature zegar.antenna_new_feature6 -> terminal.processing_new_feature2;
-		park_simple_new_connection6: feature fotokomorka.antenna_new_feature5 -> terminal.processing_new_feature;
-		park_simple_new_connection7: feature terminal.processing_new_feature3 -> szlaban.motor_new_feature;
-		park_simple_new_connection9: feature kamera.antenna_new_feature9 -> zegar.antenna_new_feature8;
-		park_simple_new_connection10: feature terminal.processing_new_feature3 -> alert.screen_new_feature;
-		park_simple_new_connection8: feature terminal.processing_new_feature3 -> petla_ind.antenna_new_feature7;
-		park_simple_new_connection11: feature terminal.processing_new_feature4 -> szlaban.motor_new_feature2;
-	properties
-		Actual_Memory_Binding => (reference (ram)) applies to terminal;
-		Actual_Processor_Binding => (reference (cpu)) applies to terminal;
-END park.simple;
-
-	DEVICE antenna
-	FEATURES
-
-		antenna_new_feature: requires bus access;
-		antenna_new_feature2: requires bus access;
-		antenna_new_feature3: requires bus access;
-		antenna_new_feature4: requires bus access;
-		antenna_new_feature5: out data port;
-		antenna_new_feature6: out data port;
-		antenna_new_feature7: in data port;
-		antenna_new_feature8: in event port;
-		antenna_new_feature9: out event port;
-	properties
-		Compute_Execution_Time => 1ms .. 2ms;
-		Deadline => 1ms;
-		Period => 1ms;
-END antenna;
-
-	DEVICE motor
-	FEATURES
-
-		VME: REQUIRES BUS ACCESS VME;
-		motor_new_feature: in data port;
-		motor_new_feature2: in event port;
-	properties
-		Compute_Execution_Time => 1ms .. 2ms;
-		Deadline => 1ms;
-		Period => 1ms;
-END motor;
-
-	DEVICE screen
-	FEATURES
-
-		VME: REQUIRES BUS ACCESS VME;
-		screen_new_feature: in data port;
-	properties
-		Compute_Execution_Time => 1ms .. 2ms;
-		Deadline => 1ms;
-		Period => 1ms;
-END screen;
+	system implementation parking.impl
+		subcomponents
+			plate: device plate;
+			photocell1: device photocell;
+			photocell2: device photocell;
+			photocell3: device photocell;
+			camera: device camera;
+			barrier: device barrier;
+			terminal: device terminal;
+			main: process p_main.impl;
+			
+			bus_mem: bus bus_mem;
+			ram: memory RAM;
+			cpu: processor the_processor;
+		connections
+			bus_plate: BUS ACCESS bus_mem -> plate.bus_mem;
+			bus_photocell1: BUS ACCESS bus_mem -> photocell1.bus_mem;
+			bus_photocell2: BUS ACCESS bus_mem -> photocell2.bus_mem;
+			bus_photocell3: BUS ACCESS bus_mem -> photocell3.bus_mem;
+			bus_camera: BUS ACCESS bus_mem -> camera.bus_mem;
+			bus_barrier: BUS ACCESS bus_mem -> barrier.bus_mem;
+			bus_terminal: BUS ACCESS bus_mem -> terminal.bus_mem;
+			bus_cpu: BUS ACCESS bus_mem -> cpu.bus_mem;
+			bus_ram: BUS ACCESS bus_mem -> ram.bus_mem;
+			
+			car_enter: port plate.enter_plate -> main.enter_plate;
+			car_leave: port plate.leave_plate -> main.leave_plate;
+			vacated1: port photocell1.vacated -> main.vacated1;
+			vacated2: port photocell2.vacated -> main.vacated2;
+			vacated3: port photocell3.vacated -> main.vacated3;
+		
+			conn_enter: port camera.enter_camera -> main.enter_camera;
+			leave: port camera.leave_camera -> main.leave_camera;
+			
+			open_enter: port main.open_enter -> barrier.open_enter;
+			open_leave: port main.open_leave -> barrier.open_leave;
+			
+			conn_terminal: port terminal.payment -> main.payment;
+		PROPERTIES
+			Actual_Memory_Binding => (reference (ram)) applies to main;
+			Actual_Processor_Binding => (reference (cpu)) applies to main;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to conn_enter;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to car_enter;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to open_enter;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to leave;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to car_leave;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to conn_terminal;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to open_leave;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated1;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated2;
+			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated3;
+			
+			
+			
+	end parking.impl;
 
 
-	PROCESS processing
-	features
-		processing_new_feature: in data port;
-		processing_new_feature2: in data port;
-		processing_new_feature3: out data port;
-		processing_new_feature4: out event port;
-end processing;
+	---------------
+	--- DEVICES ---
+	---------------
+	device plate
+		features
+			enter_plate: out event port;
+			leave_plate: out event port;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
+			
+	end plate;
 
-	PROCESS IMPLEMENTATION processing.others
-	SUBCOMPONENTS
-		receive: THREAD receiver.impl;
-		analyse: THREAD analyser.impl;
-		display: THREAD display_panel.impl;
-		transmit: THREAD transmitter.impl;
-		control_angle: THREAD controller.impl;
-		countPay: thread receiver.impl;
-		countCars: thread receiver.impl;
-		receivePay: thread receiver.impl;
-	connections
-		A14: PORT receive.receiver_out -> analyse.from_receiver;
-		A15: PORT analyse.analyser_out -> display.display_in;
-		A16: PORT transmit.transmitter_out -> analyse.from_transmitter;
-		A17: PORT control_angle.controller_out -> analyse.from_controller;
-		processing_others_new_connection: feature processing_new_feature2 -> countPay.receiver_new_feature2;
-		processing_others_new_connection2: feature processing_new_feature -> countCars.receiver_new_feature;
-		processing_others_new_connection3: feature countCars.receiver_new_feature3 -> processing_new_feature3;
-		processing_others_new_connection4: feature countPay.receiver_new_feature6 -> receivePay.receiver_new_feature4;
-		processing_others_new_connection5: feature receivePay.receiver_new_feature5 -> processing_new_feature4;
-end processing.others;
+	device photocell
+		features
+			vacated: OUT EVENT PORT;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
+	end photocell;
 
+	device camera
+		features
+			enter_camera: out data port License_Plate; 
+			leave_camera: out data port License_Plate;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
+	end camera;
 
-	THREAD receiver
-	FEATURES
-		receiver_out: OUT DATA PORT radar_types::Target_Distance;
-		receiver_in: IN DATA PORT radar_types::Target_Distance;
-		receiver_new_feature: in data port;
-		receiver_new_feature2: in data port;
-		receiver_new_feature3: out data port;
-		receiver_new_feature4: in event port;
-		receiver_new_feature5: out event port;
-		receiver_new_feature6: out event port;
-end receiver;
+	device barrier
+		features
+			open_enter: in event port;
+			open_leave: in event port;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
+	end barrier;
 
-	THREAD IMPLEMENTATION receiver.impl
+	device terminal
+		features
+			payment: out event port;
+			bus_mem : REQUIRES BUS ACCESS bus_mem;
+		PROPERTIES
+			Compute_Execution_Time => 1ms .. 2ms;
+			Deadline => 1ms;
+			Period => 1ms;
+	end terminal;
+	
+	
+	---------------
+	-- PROCESSES --
+	---------------
+	
+	process p_main
+		features
+			vacated1: in event port;
+			vacated2: in event port;
+			vacated3: in event port;
+			enter_plate: in event port;
+			leave_plate: in event port;
+			enter_camera: in data port License_Plate;
+			leave_camera: in data port License_Plate;
+			open_enter: out event port;
+			open_leave: out event port;
+			payment: in event port;
+	end p_main;
+	
+	process implementation p_main.impl
+		SUBCOMPONENTS
+			enter_analyze: thread enter_analyze.impl;
+			leave_analyze: thread leave_analyze.impl;
+			counter: thread counter.impl;
+			
+		connections
+			conn_enter_plate: port enter_plate -> enter_analyze.enter_plate;
+			conn_enter_camera: port enter_camera -> enter_analyze.enter_camera;
+			conn_open_enter: port enter_analyze.open_enter -> open_enter;
+			
+			conn_leave_plate: port leave_plate -> leave_analyze.leave_plate;
+			conn_leave_camera: port leave_camera -> leave_analyze.leave_camera;
+			conn_payment: port payment -> leave_analyze.payment;
+			conn_open_leave: port leave_analyze.open_leave -> open_leave;
+			
+			conn_coutnter_number: port counter.counter_number -> enter_analyze.counter_number;
+			conn_vacated1: port vacated1 -> counter.vacated1;
+			conn_vacated2: port vacated2 -> counter.vacated2;
+			conn_vacated3: port vacated3 -> counter.vacated3;
+			conn_update_coutner: port enter_analyze.increment_counter -> counter.increment_counter; 
+	end p_main.impl;
+	
+	-------------
+	-- THREADS --
+	-------------
+	
+	thread enter_analyze
+		features
+			enter_camera: in data port License_Plate;
+			enter_plate: in event port;
+			open_enter: out event port;
+			counter_number: in data port Car_Counter;
+			increment_counter: out event port;
+	end enter_analyze;
+	
+	thread implementation enter_analyze.impl
 		CALLS
-			CS: {
-				RS: SUBPROGRAM Receiver_Spg;
-			};
-		CONNECTIONS
-			A18: PARAMETER RS.receiver_out -> receiver_out;
-			A19: PARAMETER receiver_in -> RS.receiver_in;
+			CS: { ES: SUBPROGRAM enter_analyze_spg; };
 		PROPERTIES
-
-			Priority => 63;
-			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 10ms .. 20ms;
-			Deadline => 150ms;
-			Period => 1500ms;
-	END receiver.impl;
-
-	SUBPROGRAM Receiver_Spg
-		FEATURES
-			receiver_out: OUT PARAMETER radar_types::Target_Distance;
-			receiver_in: IN PARAMETER radar_types::Target_Distance;
-		properties
-			Source_Language => (Ada95);
-			Source_Name => "park.receiver";
-	END Receiver_Spg;
-
-
-	THREAD analyser
-		FEATURES
-			from_receiver: IN DATA PORT radar_types::Target_Distance;
-			analyser_out: OUT DATA PORT radar_types::Target_Position.Impl;
-			from_controller: IN DATA PORT radar_types::Motor_Position;
-			from_transmitter: IN EVENT PORT;
-	end analyser;
-
-	THREAD IMPLEMENTATION analyser.impl
-		CALLS
-			CS: {
-				AS: SUBPROGRAM Analyser_Spg;
-			};
-		CONNECTIONS
-			A20: PARAMETER from_receiver -> AS.from_receiver;
-			A21: PARAMETER AS.analyser_out -> analyser_out;
-			A22: PARAMETER from_controller -> AS.from_controller;
-		PROPERTIES
-
-			Priority => 62;
-			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 40ms .. 60ms;
-			Deadline => 500ms;
-			Period => 5000ms;
-	END analyser.impl;
-
-	SUBPROGRAM Analyser_Spg
-		FEATURES
-			from_receiver: IN PARAMETER radar_types::Target_Distance;
-			analyser_out: OUT PARAMETER radar_types::Target_Position.Impl;
-			from_controller: IN PARAMETER radar_types::Motor_Position;
-		properties
-			Source_Language => (Ada95);
-			Source_Name => "park.analyser";
-	END Analyser_Spg;
-
-
-	THREAD display_panel
-		FEATURES
-			display_in: IN DATA PORT radar_types::Target_Position.Impl;
-			display_out: OUT EVENT PORT;
-	END display_panel;
-
-	THREAD IMPLEMENTATION display_panel.impl
-		CALLS
-			CS: {
-				DS: SUBPROGRAM Display_Spg;
-			};
-		CONNECTIONS
-			A23: PARAMETER display_in -> DS.display_in;
-		PROPERTIES
-
-			Priority => 60;
-			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 10ms .. 30ms;
-			Deadline => 200ms;
-			Period => 2000ms;
-	END display_panel.impl;
-
-	SUBPROGRAM Display_Spg
-		FEATURES
-			display_in: IN PARAMETER radar_types::Target_Position.Impl;
-		properties
-			Source_Language => (Ada95);
-			Source_Name => "park.display_panel";
-	END Display_Spg;
-
-
-	THREAD transmitter
-		FEATURES
-			transmitter_out: OUT EVENT PORT;
-	END transmitter;
-
-	THREAD IMPLEMENTATION transmitter.impl
-		PROPERTIES
-
 			Priority => 71;
 			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 10ms .. 10ms;
-			Compute_Entrypoint_Source_Text => "park.transmitter";
+			Compute_Execution_Time => 10ms .. 20ms;
 			Deadline => 50ms;
-			Period => 500ms;
-	END transmitter.impl;
-
-	THREAD controller
-		FEATURES
-			controller_in: IN DATA PORT radar_types::Motor_Position;
-			controller_out: OUT DATA PORT radar_types::Motor_Position;
-	END controller;
-
-	THREAD IMPLEMENTATION controller.impl
+			Period => 50ms;
+	end enter_analyze.impl;
+	
+	thread leave_analyze
+		features
+			leave_camera: in data port License_Plate;
+			leave_plate: in event port;
+			payment: in event port;
+			open_leave: out event port;
+	end leave_analyze;
+	
+	thread implementation leave_analyze.impl
 		CALLS
-			CS1: {
-				CS: SUBPROGRAM Controller_Spg;
-			};
-		CONNECTIONS
-			A24: PARAMETER controller_in -> CS.controller_in;
-			A25: PARAMETER CS.controller_out -> controller_out;
+			CS: { LS: SUBPROGRAM leave_analyze_spg; };
 		PROPERTIES
-
 			Priority => 70;
 			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 10ms .. 10ms;
-			Deadline => 150ms;
-			Period => 1500ms;
-	END controller.impl;
-
-	SUBPROGRAM Controller_Spg
-		FEATURES
-			controller_in: IN PARAMETER radar_types::Motor_Position;
-			controller_out: OUT PARAMETER radar_types::Motor_Position;
+			Compute_Execution_Time => 10ms .. 20ms;
+			Deadline => 50ms;
+			Period => 50ms;
+	end leave_analyze.impl;
+	
+	thread counter
+		features
+			counter_number: out data port Car_Counter;
+			vacated1: in event port;
+			vacated2: in event port;
+			vacated3: in event port;
+			increment_counter: in event port;
+	end counter;
+	
+	thread implementation counter.impl
+		CALLS
+			CS: { LS: SUBPROGRAM counter_spg; };
+		PROPERTIES
+			Priority => 72;
+			Dispatch_Protocol => Periodic;
+			Compute_Execution_Time => 2ms .. 10ms;
+			Deadline => 50ms;
+			Period => 50ms;
+	end counter.impl;
+	
+	
+	-----------------
+	-- SUBPROGRAMS --
+	-----------------
+	
+	subprogram enter_analyze_spg
 		properties
 			Source_Language => (Ada95);
-			Source_Name => "park.controller";
-	END Controller_Spg;
-
-	PROCESSOR leon2
-		FEATURES
-			VME: REQUIRES BUS ACCESS VME;
-		PROPERTIES
-			Clock_Period => 200ns;
-			Scheduling_Protocol => (Posix_1003_Highest_Priority_First_Protocol);
+			Source_Name => "parking.enter";
+	end enter_analyze_spg;
+	
+	subprogram leave_analyze_spg
+		properties
+			Source_Language => (Ada95);
+			Source_Name => "parking.leave";
+	end leave_analyze_spg;
+	
+	subprogram counter_spg
+		properties
+			Source_Language => (Ada95);
+			Source_Name => "parking.counter";
+	end counter_spg;
+	
+	
+	-------------------------
+	-- PROCESSOR, RAM, BUS --
+	-------------------------
+	processor the_processor
+		features
+				bus_mem: REQUIRES BUS ACCESS bus_mem;
+		properties
 			Deployment::Execution_Platform => Native;
-			Priority_Range => 0 .. 255;
-	END leon2;
+            Scheduling_Protocol => (Posix_1003_Highest_Priority_First_Protocol); 
+			Priority_Range => 1 .. 255; 
+	end the_processor;
 
-	BUS VME
-	END VME;
-
+	processor implementation the_processor.i
+	end the_processor.i;
+	
+	BUS bus_mem
+	end bus_mem;
 
 	MEMORY RAM
 		FEATURES
-			VME: REQUIRES BUS ACCESS VME;
+			bus_mem: REQUIRES BUS ACCESS bus_mem;
 	END RAM;
+	
+	
+	----------
+	-- DATA --
+	----------
+	DATA License_Plate
+		PROPERTIES
+			Data_Model::Data_Representation => integer;
+	END License_Plate;
+	
+	DATA Car_Counter
+		PROPERTIES
+			Data_Model::Data_Representation => integer;
+	END Car_Counter;
 
 end parking;

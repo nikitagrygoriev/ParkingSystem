@@ -1,0 +1,82 @@
+V "GNAT Lib v7"
+A -O1
+A -g
+A -gnatwa
+A -gnatwG
+A -gnat12
+A -g
+A -gnata
+A -gnato
+A -gnatA
+P ZX
+
+RN
+RR NO_ALLOCATORS
+RR NO_DISPATCH
+RR NO_IO
+RR NO_RECURSION
+RR NO_UNCHECKED_ACCESS
+RR NO_UNCHECKED_DEALLOCATION
+RV NO_IMPLEMENTATION_PRAGMAS
+RV NO_OBSOLESCENT_FEATURES
+RV SPARK_05
+
+U polyorb_hi_generated.deployment%s  polyorb_hi_generated-deployment.ads  54ab9670 NE OO PR PK
+W polyorb_hi_generated%s  polyorb_hi_generated.ads  polyorb_hi_generated.ali
+W system.unsigned_types%s  s-unstyp.ads		s-unstyp.ali
+
+D polyorb_hi_generated.ads  20170204221544 32a22d97 polyorb_hi_generated%s
+D polyorb_hi_generated-deployment.ads  20200610154839 6609bbe7 polyorb_hi_generated.deployment%s
+D system.ads		20170510173650 4635ec04 system%s
+D s-unstyp.ads		20160502101423 34867c83 system.unsigned_types%s
+D /home/dedless/Desktop/ocarina/include/ocarina/runtime/polyorb-hi-ada/native.adc  20170204221544 00000000
+D /home/dedless/Desktop/ocarina/include/ocarina/runtime/polyorb-hi-ada/gnat.adc  20170204221544 00000000
+X 1 polyorb_hi_generated.ads
+34K9*PolyORB_HI_Generated 38e25 2|10r9 226r12 272r5
+X 2 polyorb_hi_generated-deployment.ads
+10K30*Deployment 1|34k9 2|226r33 272l26 272e36
+16E8*Node_Type 17e12 21r7 27r7 37r4 37r20 37r39 55r22 86r9
+17n5*main_K{16E8} 22r5 52r7 56r4 91r8 93r8 95r8
+29i3*Max_Node_Image_Size{integer} 40r23
+36E11*UT_Deployment_Main_Node_Type_Range{16E8} 47r11
+39I11*UT_Deployment_Main_1_Max_Node_Image_Size{integer} 44r7
+42A11*UT_Deployment_Main_Node_Image_Component{string}<integer> 48r9
+46A8*UT_Deployment_Main_Node_Image_Array(42A11)<16E8> 50r25 51r4
+50a3*Node_Image{46A8}
+55e3*My_Node{16E8}
+60E8*Entity_Type 63e20 67r7 77r7 82r4 82r22 82r43 186r9
+61n5*main_enter_analyze_K{60E8} 68r5 90r7 117r7 191r8 193r8 195r8 197r8 199r8
+62n5*main_leave_analyze_K{60E8} 70r5 92r7 119r7 201r8 203r8 205r8 207r8
+63n5*main_counter_K{60E8} 72r5 94r7 121r7 209r8 211r8 213r8 215r8 217r8
+81E11*UT_Deployment_Main_Entity_Type_Range{60E8} 85r11 112r11
+84A8*UT_Deployment_Main_Entity_Table_Array(16E8)<60E8> 88r27 89r4
+88a3*Entity_Table{84A8}
+97i3*Max_Entity_Image_Size{integer} 105r23
+104I11*UT_Deployment_Main_1_Max_Entity_Image_Size{integer} 109r7
+107A11*UT_Deployment_Main_Entity_Image_Component{string}<integer> 113r9
+111A8*UT_Deployment_Main_Entity_Image_Array(107A11)<60E8> 115r27 116r4
+115a3*Entity_Image{111A8}
+127E8*Port_Type 141e38 145r7 177r7 182r4 182r20 182r39
+128n5*main_enter_analyze_enter_camera_K{127E8} 146r5 190r7 236r7
+129n5*main_enter_analyze_enter_plate_K{127E8} 148r5 192r7 238r7
+130n5*main_enter_analyze_open_enter_K{127E8} 150r5 194r7 240r7
+131n5*main_enter_analyze_counter_number_K{127E8} 152r5 196r7 242r7
+132n5*main_enter_analyze_increment_counter_K{127E8} 154r5 198r7 244r7
+133n5*main_leave_analyze_leave_camera_K{127E8} 156r5 200r7 246r7
+134n5*main_leave_analyze_leave_plate_K{127E8} 158r5 202r7 248r7
+135n5*main_leave_analyze_payment_K{127E8} 160r5 204r7 250r7
+136n5*main_leave_analyze_open_leave_K{127E8} 162r5 206r7 252r7
+137n5*main_counter_counter_number_K{127E8} 164r5 208r7 254r7
+138n5*main_counter_vacated1_K{127E8} 166r5 210r7 256r7
+139n5*main_counter_vacated2_K{127E8} 168r5 212r7 258r7
+140n5*main_counter_vacated3_K{127E8} 170r5 214r7 260r7
+141n5*main_counter_increment_counter_K{127E8} 172r5 216r7 262r7
+181E11*UT_Deployment_Main_Port_Type_Range{127E8} 185r11 231r11
+184A8*UT_Deployment_Main_Port_Table_Array(60E8)<127E8> 188r25 189r4
+188a3*Port_Table{184A8}
+219i3*Max_Port_Image_Size{integer} 226r44
+224A11*Port_Sized_String{string}<integer> 232r9
+230A8*UT_Deployment_Main_Port_Image_Array(224A11)<127E8> 234r25 235r4
+234a3*Port_Image{230A8}
+267i3*Max_Payload_Size{integer}
+
