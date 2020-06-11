@@ -18,7 +18,6 @@ public
 			barrier: device barrier;
 			terminal: device terminal;
 			main: process p_main.impl;
-			
 			bus_mem: bus bus_mem;
 			ram: memory RAM;
 			cpu: processor the_processor;
@@ -31,20 +30,16 @@ public
 			bus_barrier: BUS ACCESS bus_mem -> barrier.bus_mem;
 			bus_terminal: BUS ACCESS bus_mem -> terminal.bus_mem;
 			bus_cpu: BUS ACCESS bus_mem -> cpu.bus_mem;
-			bus_ram: BUS ACCESS bus_mem -> ram.bus_mem;
-			
+			bus_ram: BUS ACCESS bus_mem -> ram.bus_mem;			
 			car_enter: port plate.enter_plate -> main.enter_plate;
 			car_leave: port plate.leave_plate -> main.leave_plate;
 			vacated1: port photocell1.vacated -> main.vacated1;
 			vacated2: port photocell2.vacated -> main.vacated2;
-			vacated3: port photocell3.vacated -> main.vacated3;
-		
+			vacated3: port photocell3.vacated -> main.vacated3;	
 			conn_enter: port camera.enter_camera -> main.enter_camera;
-			leave: port camera.leave_camera -> main.leave_camera;
-			
+			leave: port camera.leave_camera -> main.leave_camera;			
 			open_enter: port main.open_enter -> barrier.open_enter;
-			open_leave: port main.open_leave -> barrier.open_leave;
-			
+			open_leave: port main.open_leave -> barrier.open_leave;			
 			conn_terminal: port terminal.payment -> main.payment;
 		PROPERTIES
 			Actual_Memory_Binding => (reference (ram)) applies to main;
@@ -59,9 +54,7 @@ public
 			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated1;
 			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated2;
 			Actual_Connection_Binding => (reference (bus_mem)) applies to vacated3;
-			
-			
-			
+				
 	end parking.impl;
 
 
@@ -76,8 +69,7 @@ public
 		PROPERTIES
 			Compute_Execution_Time => 1ms .. 2ms;
 			Deadline => 1ms;
-			Period => 1ms;
-			
+			Period => 1ms;		
 	end plate;
 
 	device photocell
@@ -150,18 +142,18 @@ public
 		connections
 			conn_enter_plate: port enter_plate -> enter_analyze.enter_plate;
 			conn_enter_camera: port enter_camera -> enter_analyze.enter_camera;
-			conn_open_enter: port enter_analyze.open_enter -> open_enter;
-			
+			conn_open_enter: port enter_analyze.out_enter_analyze -> open_enter;			
 			conn_leave_plate: port leave_plate -> leave_analyze.leave_plate;
 			conn_leave_camera: port leave_camera -> leave_analyze.leave_camera;
 			conn_payment: port payment -> leave_analyze.payment;
-			conn_open_leave: port leave_analyze.open_leave -> open_leave;
-			
-			conn_coutnter_number: port counter.counter_number -> enter_analyze.counter_number;
+			conn_open_leave: port leave_analyze.out_leave_analyze -> open_leave;			
+			conn_coutnter_num_enter: port counter.counter_number -> enter_analyze.counter_number;
+			conn_coutnter_num_leave: port counter.counter_number -> leave_analyze.counter_number;
 			conn_vacated1: port vacated1 -> counter.vacated1;
 			conn_vacated2: port vacated2 -> counter.vacated2;
 			conn_vacated3: port vacated3 -> counter.vacated3;
-			conn_update_coutner: port enter_analyze.increment_counter -> counter.increment_counter; 
+			conn_inc_coutner: port leave_analyze.increment_counter -> counter.increment_counter; 
+			conn_dec_coutner: port enter_analyze.decrement_counter -> counter.decrement_counter; 
 	end p_main.impl;
 	
 	-------------
@@ -172,20 +164,24 @@ public
 		features
 			enter_camera: in data port License_Plate;
 			enter_plate: in event port;
-			open_enter: out event port;
+			out_enter_analyze: out event port;
 			counter_number: in data port Car_Counter;
-			increment_counter: out event port;
+			decrement_counter: out data port Car_Counter;
 	end enter_analyze;
 	
 	thread implementation enter_analyze.impl
 		CALLS
 			CS: { ES: SUBPROGRAM enter_analyze_spg; };
+		connections
+			conn_counter_dec: parameter ES.decrement_counter -> decrement_counter;
+			conn_counter_num: parameter counter_number -> ES.counter_number;
+			conn_camera: parameter enter_camera -> ES.camera_license_plates;
 		PROPERTIES
 			Priority => 71;
 			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 10ms .. 20ms;
-			Deadline => 50ms;
-			Period => 50ms;
+			Compute_Execution_Time => 100ms .. 200ms;
+			Deadline => 600ms;
+			Period => 600ms;
 	end enter_analyze.impl;
 	
 	thread leave_analyze
@@ -193,18 +189,24 @@ public
 			leave_camera: in data port License_Plate;
 			leave_plate: in event port;
 			payment: in event port;
-			open_leave: out event port;
+			out_leave_analyze: out event port;
+			counter_number: in data port Car_Counter;
+			increment_counter: out data port Car_Counter;
 	end leave_analyze;
 	
 	thread implementation leave_analyze.impl
 		CALLS
 			CS: { LS: SUBPROGRAM leave_analyze_spg; };
+		connections
+			conn_counter_inc: parameter LS.increment_counter -> increment_counter;
+			conn_counter_num: parameter counter_number -> LS.counter_number;
+			conn_camera: parameter leave_camera -> LS.camera_license_plates;
 		PROPERTIES
 			Priority => 70;
 			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 10ms .. 20ms;
-			Deadline => 50ms;
-			Period => 50ms;
+			Compute_Execution_Time => 100ms .. 200ms;
+			Deadline => 600ms;
+			Period => 600ms;
 	end leave_analyze.impl;
 	
 	thread counter
@@ -213,18 +215,23 @@ public
 			vacated1: in event port;
 			vacated2: in event port;
 			vacated3: in event port;
-			increment_counter: in event port;
+			increment_counter: in data port Car_Counter;
+			decrement_counter: in data port Car_Counter;
 	end counter;
 	
 	thread implementation counter.impl
 		CALLS
 			CS: { LS: SUBPROGRAM counter_spg; };
+		connections
+			conn_inc: parameter increment_counter -> LS.increment;
+			conn_dec: parameter decrement_counter -> LS.decrement;
+			conn_counter: parameter LS.counter -> counter_number;
 		PROPERTIES
 			Priority => 72;
 			Dispatch_Protocol => Periodic;
-			Compute_Execution_Time => 2ms .. 10ms;
-			Deadline => 50ms;
-			Period => 50ms;
+			Compute_Execution_Time => 20ms .. 100ms;
+			Deadline => 600ms;
+			Period => 300ms;
 	end counter.impl;
 	
 	
@@ -233,22 +240,36 @@ public
 	-----------------
 	
 	subprogram enter_analyze_spg
+		features
+			decrement_counter: out parameter Car_Counter;
+			counter_number: in parameter Car_Counter;
+			camera_license_plates: in parameter License_Plate;
 		properties
 			Source_Language => (Ada95);
 			Source_Name => "parking.enter";
 	end enter_analyze_spg;
 	
 	subprogram leave_analyze_spg
+		features
+			increment_counter: out parameter Car_Counter;
+			counter_number: in parameter Car_Counter;
+			camera_license_plates: in parameter License_Plate;
 		properties
 			Source_Language => (Ada95);
 			Source_Name => "parking.leave";
 	end leave_analyze_spg;
 	
 	subprogram counter_spg
+		features
+			increment: in parameter Car_Counter;
+			decrement: in parameter Car_Counter;
+			counter: out parameter Car_Counter;
 		properties
 			Source_Language => (Ada95);
 			Source_Name => "parking.counter";
 	end counter_spg;
+	
+	
 	
 	
 	-------------------------
